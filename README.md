@@ -1,70 +1,311 @@
-# Getting Started with Create React App
+# Digital Signage CMS - Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+React-based Content Management System for managing digital signage displays, content, layouts, and schedules.
+
+## Tech Stack
+
+- **Framework**: React 19.2
+- **Build Tool**: Create React App
+- **Styling**: Tailwind CSS 3.4
+- **Routing**: React Router DOM 6.30
+- **HTTP Client**: Axios 1.13
+- **Fonts**: Bungee (headings), Roboto (body)
+
+## Features
+
+- User authentication with JWT tokens
+- Dashboard with statistics
+- Content library with file manager
+- Visual layout designer with drag-and-drop regions
+- Playlist management
+- Schedule management
+- Display registration and monitoring
+- Responsive design with Tailwind CSS
+
+## Requirements
+
+- Node.js 16+ 
+- npm or yarn
+
+## Installation
+
+1. **Install Dependencies**
+   ```bash
+   npm install
+   ```
+
+2. **Configure API Endpoint**
+   
+   Update `src/services/api.js` if backend is not on `localhost:8000`:
+   ```javascript
+   const api = axios.create({
+     baseURL: 'http://your-backend-url/api',
+   });
+   ```
+
+3. **Start Development Server**
+   ```bash
+   npm start
+   ```
+   
+   App will open at `http://localhost:3000`
+
+## Project Structure
+
+```
+src/
+├── components/          # Reusable components
+│   └── MediaPicker.jsx  # Visual file manager modal
+├── contexts/            # React contexts
+│   └── AuthContext.js   # Authentication state management
+├── pages/               # Page components
+│   ├── Dashboard.jsx    # Main dashboard
+│   ├── Login.jsx        # Login page
+│   ├── Displays.jsx     # Display management
+│   ├── Contents.jsx     # Content library
+│   ├── Playlists.jsx    # Playlist management
+│   ├── Schedules.jsx    # Schedule management
+│   ├── Layouts.jsx      # Layout list
+│   └── LayoutDesigner.jsx # Visual layout editor
+├── services/            # API services
+│   └── api.js           # Axios configuration & API methods
+├── App.js               # Main app component with routing
+└── index.css            # Global styles & Tailwind imports
+```
 
 ## Available Scripts
 
-In the project directory, you can run:
-
 ### `npm start`
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Runs the app in development mode at [http://localhost:3000](http://localhost:3000)
 
 ### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Launches the test runner in interactive watch mode
 
 ### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Builds the app for production to the `build` folder
 
 ### `npm run eject`
+**Note: this is a one-way operation!** Ejects from Create React App
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Features Guide
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Authentication
+- Login with email/password
+- Token stored in localStorage
+- Auto-redirect to login on 401 errors
+- User profile in sidebar
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+**Default Credentials:**
+- Email: `admin@example.com`
+- Password: `password`
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Dashboard
+- Total counts for displays, content, playlists, schedules
+- Quick access cards
+- Recent activity overview
 
-## Learn More
+### Content Management
+- Upload images and videos
+- Automatic video thumbnail generation
+- File preview with details
+- Grid view with thumbnails
+- Delete content
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Layout Designer
+- Visual canvas showing display dimensions
+- Add multiple regions to layout
+- Drag regions to position
+- Resize regions with handles
+- Arrow key navigation (1px or 10px with Shift)
+- Assign playlists or single content to regions
+- Visual media picker with thumbnails
+- Real-time preview of assigned media
+- Properties panel with precise controls
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Playlists
+- Create playlists with multiple content items
+- Reorder content
+- Set duration for each item
+- Assign to layout regions
 
-### Code Splitting
+### Displays
+- Register new displays with unique codes
+- Monitor display status
+- Assign layouts to displays
+- View display information
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### Schedules
+- Create time-based schedules
+- Assign playlists to time slots
+- Link schedules to displays
 
-### Analyzing the Bundle Size
+## Styling
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### Tailwind CSS
+The app uses Tailwind CSS for styling. Configuration in `tailwind.config.js`:
 
-### Making a Progressive Web App
+```javascript
+module.exports = {
+  content: ["./src/**/*.{js,jsx,ts,tsx}"],
+  theme: {
+    extend: {
+      fontFamily: {
+        heading: ['Bungee', 'cursive'],
+        body: ['Roboto', 'sans-serif'],
+      },
+    },
+  },
+}
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### Custom Fonts
+- **Bungee**: Used for headings (h1-h6)
+- **Roboto**: Used for body text
 
-### Advanced Configuration
+Fonts are loaded from Google Fonts in `src/index.css`
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## API Integration
 
-### Deployment
+### Authentication Flow
+1. User logs in via `/api/login`
+2. Token received and stored in localStorage
+3. Token automatically added to all API requests via interceptor
+4. On 401 error, user redirected to login
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### API Methods
+Located in `src/services/api.js`:
 
-### `npm run build` fails to minify
+```javascript
+// Content API
+contentAPI.getAll()
+contentAPI.create(formData)
+contentAPI.delete(id)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+// Display API
+displayAPI.getAll()
+displayAPI.create(data)
+
+// Layout API
+layoutAPI.getAll()
+layoutAPI.getOne(id)
+layoutAPI.create(data)
+
+// Region API
+regionAPI.create(data)
+regionAPI.update(id, data)
+
+// Playlist API
+playlistAPI.getAll()
+playlistAPI.create(data)
+
+// Schedule API
+scheduleAPI.getAll()
+scheduleAPI.create(data)
+```
+
+## Layout Designer
+
+### Keyboard Shortcuts
+- **Arrow Keys**: Move selected region by 1px
+- **Shift + Arrow Keys**: Move selected region by 10px
+- **Delete/Backspace**: Remove selected region
+
+### Region Controls
+- **Drag**: Click and drag region to move
+- **Resize**: Drag corner/edge handles to resize
+- **Properties**: Edit precise values in floating panel
+- **Media**: Assign playlist or single content file
+
+### Canvas
+- Displays layout at 50% scale for preview
+- Black background representing display screen
+- Regions show assigned media thumbnails
+- Selected region highlighted in blue
+
+## Environment Variables
+
+Create `.env` file for environment-specific configuration:
+
+```env
+REACT_APP_API_URL=http://localhost:8000/api
+```
+
+## Building for Production
+
+1. **Build the app**
+   ```bash
+   npm run build
+   ```
+
+2. **Serve the build**
+   ```bash
+   npx serve -s build
+   ```
+
+3. **Deploy**
+   - Upload `build/` folder to web server
+   - Configure server to serve `index.html` for all routes
+   - Set up HTTPS
+   - Update API URL in production
+
+### Nginx Configuration
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+    root /path/to/build;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
+## Troubleshooting
+
+### CORS Errors
+Ensure backend CORS is configured to allow frontend origin
+
+### 401 Unauthorized
+- Check if token is valid
+- Verify backend is running
+- Check API URL in `api.js`
+
+### Images Not Loading
+- Verify backend storage link is created
+- Check file paths in API responses
+- Ensure backend URL is correct
+
+### Build Errors
+```bash
+# Clear cache and reinstall
+rm -rf node_modules package-lock.json
+npm install
+```
+
+## Browser Support
+
+- Chrome (latest)
+- Firefox (latest)
+- Safari (latest)
+- Edge (latest)
+
+## Performance Optimization
+
+- Images lazy loaded
+- Code splitting with React Router
+- Tailwind CSS purged in production
+- Axios request/response interceptors
+- React.memo for expensive components
+
+## Contributing
+
+1. Create feature branch
+2. Make changes
+3. Test thoroughly
+4. Submit pull request
+
+## License
+
+Proprietary
