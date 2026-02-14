@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { scheduleAPI, displayAPI, playlistAPI } from '../services/api';
+import Swal from 'sweetalert2';
 
 function Schedules() {
   const [schedules, setSchedules] = useState([]);
   const [displays, setDisplays] = useState([]);
   const [playlists, setPlaylists] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState(null);
   const [formData, setFormData] = useState({
     display_id: '',
     playlist_id: '',
@@ -50,8 +52,27 @@ function Schedules() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await scheduleAPI.create(formData);
+      if (editingSchedule) {
+        await scheduleAPI.update(editingSchedule.id, formData);
+        await Swal.fire({
+          icon: 'success',
+          title: 'Updated!',
+          text: 'Schedule updated successfully',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      } else {
+        await scheduleAPI.create(formData);
+        await Swal.fire({
+          icon: 'success',
+          title: 'Created!',
+          text: 'Schedule created successfully',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      }
       setShowModal(false);
+      setEditingSchedule(null);
       setFormData({
         display_id: '',
         playlist_id: '',
@@ -61,18 +82,74 @@ function Schedules() {
       });
       fetchSchedules();
     } catch (error) {
-      console.error('Error creating schedule:', error);
-      alert('Error creating schedule. Make sure all fields are filled correctly.');
+      console.error('Error saving schedule:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error Saving Schedule',
+        text: 'Make sure all fields are filled correctly.'
+      });
     }
   };
 
+  const handleEdit = (schedule) => {
+    setEditingSchedule(schedule);
+    // Format datetime for input fields
+    const formatDateTime = (dateStr) => {
+      const date = new Date(dateStr);
+      return date.toISOString().slice(0, 16);
+    };
+    setFormData({
+      display_id: schedule.display_id,
+      playlist_id: schedule.playlist_id,
+      start_time: formatDateTime(schedule.start_time),
+      end_time: formatDateTime(schedule.end_time),
+      is_active: schedule.is_active,
+    });
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingSchedule(null);
+    setFormData({
+      display_id: '',
+      playlist_id: '',
+      start_time: '',
+      end_time: '',
+      is_active: true,
+    });
+  };
+
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this schedule?')) {
+    const result = await Swal.fire({
+      title: 'Delete Schedule?',
+      text: 'This action cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, delete it',
+      cancelButtonText: 'Cancel'
+    });
+
+    if (result.isConfirmed) {
       try {
         await scheduleAPI.delete(id);
         fetchSchedules();
+        Swal.fire({
+          icon: 'success',
+          title: 'Deleted!',
+          text: 'Schedule has been deleted.',
+          timer: 2000,
+          showConfirmButton: false
+        });
       } catch (error) {
         console.error('Error deleting schedule:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to delete schedule.'
+        });
       }
     }
   };
@@ -145,12 +222,20 @@ function Schedules() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <button
-                      onClick={() => handleDelete(schedule.id)}
-                      className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-body font-semibold text-sm"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEdit(schedule)}
+                        className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors font-body font-semibold text-sm"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(schedule.id)}
+                        className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-body font-semibold text-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -160,10 +245,12 @@ function Schedules() {
       )}
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={handleCloseModal}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="px-6 py-5 border-b border-gray-100">
-              <h2 className="text-2xl font-heading text-gray-900">Create Schedule</h2>
+              <h2 className="text-2xl font-heading text-gray-900">
+                {editingSchedule ? 'Edit Schedule' : 'Create Schedule'}
+              </h2>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="p-6 space-y-5">
@@ -239,7 +326,7 @@ function Schedules() {
               <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-3 justify-end rounded-b-2xl">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={handleCloseModal}
                   className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors font-body font-semibold"
                 >
                   Cancel
@@ -248,7 +335,7 @@ function Schedules() {
                   type="submit"
                   className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-body font-semibold"
                 >
-                  Create Schedule
+                  {editingSchedule ? 'Update Schedule' : 'Create Schedule'}
                 </button>
               </div>
             </form>

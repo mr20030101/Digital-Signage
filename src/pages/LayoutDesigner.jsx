@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { layoutAPI, regionAPI, playlistAPI, contentAPI } from '../services/api';
 import MediaPicker from '../components/MediaPicker';
+import Swal from 'sweetalert2';
 
 function LayoutDesigner() {
   const { id } = useParams();
@@ -75,7 +76,48 @@ function LayoutDesigner() {
     }
   };
 
-  const deleteRegion = (id) => {
+  const deleteRegion = async (id) => {
+    const region = regions.find(r => r.id === id);
+    
+    // Confirm deletion
+    const result = await Swal.fire({
+      title: 'Delete Region?',
+      text: `Delete "${region?.name || 'this region'}"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, delete it',
+      cancelButtonText: 'Cancel'
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+    
+    // If it's not a new region (exists in database), delete it from backend
+    if (region && !region.isNew) {
+      try {
+        await regionAPI.delete(id);
+        await Swal.fire({
+          icon: 'success',
+          title: 'Deleted!',
+          text: 'Region deleted successfully',
+          timer: 1500,
+          showConfirmButton: false
+        });
+      } catch (error) {
+        console.error('Error deleting region:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to delete region from database.'
+        });
+        return; // Don't remove from UI if backend delete failed
+      }
+    }
+    
+    // Remove from local state
     setRegions(regions.filter(r => r.id !== id));
     if (selectedRegion?.id === id) {
       setSelectedRegion(null);
@@ -283,11 +325,23 @@ function LayoutDesigner() {
           await regionAPI.update(region.id, regionData);
         }
       }
-      alert('Layout saved successfully!');
+      
+      await Swal.fire({
+        icon: 'success',
+        title: 'Saved!',
+        text: 'Layout saved successfully',
+        timer: 2000,
+        showConfirmButton: false
+      });
+      
       navigate('/layouts');
     } catch (error) {
       console.error('Error saving layout:', error);
-      alert('Error saving layout: ' + (error.response?.data?.message || error.message));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error Saving Layout',
+        text: error.response?.data?.message || error.message
+      });
     }
   };
 

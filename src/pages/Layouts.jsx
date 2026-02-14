@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { layoutAPI } from '../services/api';
+import Swal from 'sweetalert2';
 
 function Layouts() {
   const navigate = useNavigate();
@@ -39,12 +40,35 @@ function Layouts() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this layout?')) {
+    const result = await Swal.fire({
+      title: 'Delete Layout?',
+      text: 'This action cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, delete it',
+      cancelButtonText: 'Cancel'
+    });
+
+    if (result.isConfirmed) {
       try {
         await layoutAPI.delete(id);
         fetchLayouts();
+        Swal.fire({
+          icon: 'success',
+          title: 'Deleted!',
+          text: 'Layout has been deleted.',
+          timer: 2000,
+          showConfirmButton: false
+        });
       } catch (error) {
         console.error('Error deleting layout:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to delete layout.'
+        });
       }
     }
   };

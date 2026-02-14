@@ -1,11 +1,33 @@
 import axios from 'axios';
 
+// Dynamic API URL configuration
+const getApiUrl = () => {
+  // Check for environment variable first
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  
+  // Default to localhost for development
+  const protocol = window.location.protocol;
+  const hostname = window.location.hostname;
+  
+  // If running on localhost/127.0.0.1, use port 8000
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return `${protocol}//localhost:8000/api`;
+  }
+  
+  // Otherwise assume API is on same host
+  return `${protocol}//${hostname}/api`;
+};
+
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api',
+  baseURL: getApiUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+console.log('API Base URL:', api.defaults.baseURL);
 
 // Add token to requests
 api.interceptors.request.use((config) => {
@@ -34,6 +56,7 @@ export const displayAPI = {
   create: (data) => api.post('/displays', data),
   update: (id, data) => api.put(`/displays/${id}`, data),
   delete: (id) => api.delete(`/displays/${id}`),
+  regenerateToken: (code) => api.post(`/player/${code}/regenerate-token`),
 };
 
 export const contentAPI = {
@@ -55,6 +78,9 @@ export const playlistAPI = {
   create: (data) => api.post('/playlists', data),
   update: (id, data) => api.put(`/playlists/${id}`, data),
   delete: (id) => api.delete(`/playlists/${id}`),
+  addContent: (id, contentId, order) => api.post(`/playlists/${id}/contents`, { content_id: contentId, order }),
+  removeContent: (playlistId, contentId) => api.delete(`/playlists/${playlistId}/contents/${contentId}`),
+  reorderContents: (id, contents) => api.put(`/playlists/${id}/contents/reorder`, { contents }),
 };
 
 export const scheduleAPI = {
@@ -66,8 +92,18 @@ export const scheduleAPI = {
 };
 
 export const playerAPI = {
-  register: (data) => api.post('/player/register', data),
-  getContent: (code) => api.get(`/player/${code}/content`),
+  register: (data, token) => {
+    const config = token ? {
+      headers: { Authorization: `Bearer ${token}` }
+    } : {};
+    return api.post('/player/register', data, config);
+  },
+  getContent: (code, token) => {
+    const config = token ? {
+      headers: { Authorization: `Bearer ${token}` }
+    } : {};
+    return api.get(`/player/${code}/content`, config);
+  },
 };
 
 export const layoutAPI = {
@@ -84,6 +120,11 @@ export const regionAPI = {
   create: (data) => api.post('/regions', data),
   update: (id, data) => api.put(`/regions/${id}`, data),
   delete: (id) => api.delete(`/regions/${id}`),
+};
+
+export const settingsAPI = {
+  getAll: () => api.get('/settings'),
+  regeneratePlayerToken: () => api.post('/settings/regenerate-player-token'),
 };
 
 export default api;

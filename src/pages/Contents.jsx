@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { contentAPI } from '../services/api';
+import Swal from 'sweetalert2';
 
 function Contents() {
   const [contents, setContents] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [editingContent, setEditingContent] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     type: 'image',
@@ -69,27 +71,91 @@ function Contents() {
     }
 
     try {
-      const response = await contentAPI.create(data);
-      console.log('Upload success:', response);
+      if (editingContent) {
+        await contentAPI.update(editingContent.id, data);
+        await Swal.fire({
+          icon: 'success',
+          title: 'Updated!',
+          text: 'Content updated successfully',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      } else {
+        await contentAPI.create(data);
+        await Swal.fire({
+          icon: 'success',
+          title: 'Uploaded!',
+          text: 'Content uploaded successfully',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      }
       setShowModal(false);
+      setEditingContent(null);
       setFormData({ name: '', type: 'image', duration: 10, content: '' });
       setSelectedFile(null);
       setFilePreview(null);
       fetchContents();
     } catch (error) {
-      console.error('Error creating content:', error);
+      console.error('Error saving content:', error);
       console.error('Error response:', error.response);
-      alert(`Error uploading content: ${error.response?.data?.message || error.message}`);
+      Swal.fire({
+        icon: 'error',
+        title: editingContent ? 'Update Failed' : 'Upload Failed',
+        text: error.response?.data?.message || error.message,
+      });
     }
   };
 
+  const handleEdit = (content) => {
+    setEditingContent(content);
+    setFormData({
+      name: content.name,
+      type: content.type,
+      duration: content.duration,
+      content: content.content || '',
+    });
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingContent(null);
+    setFormData({ name: '', type: 'image', duration: 10, content: '' });
+    setSelectedFile(null);
+    setFilePreview(null);
+  };
+
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this content?')) {
+    const result = await Swal.fire({
+      title: 'Delete Content?',
+      text: 'This action cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, delete it',
+      cancelButtonText: 'Cancel'
+    });
+
+    if (result.isConfirmed) {
       try {
         await contentAPI.delete(id);
         fetchContents();
+        Swal.fire({
+          icon: 'success',
+          title: 'Deleted!',
+          text: 'Content has been deleted.',
+          timer: 2000,
+          showConfirmButton: false
+        });
       } catch (error) {
         console.error('Error deleting content:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to delete content.'
+        });
       }
     }
   };
@@ -184,12 +250,20 @@ function Contents() {
                 </span>
                 <h3 className="text-lg font-heading text-gray-900 mb-2 truncate">{content.name}</h3>
                 <p className="text-sm text-gray-600 font-body mb-4">Duration: {content.duration}s</p>
-                <button
-                  onClick={() => handleDelete(content.id)}
-                  className="w-full px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-body font-semibold"
-                >
-                  Delete
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEdit(content)}
+                    className="flex-1 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors font-body font-semibold"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(content.id)}
+                    className="flex-1 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-body font-semibold"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -197,10 +271,12 @@ function Contents() {
       )}
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={handleCloseModal}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="px-6 py-5 border-b border-gray-100">
-              <h2 className="text-2xl font-heading text-gray-900">Upload Content</h2>
+              <h2 className="text-2xl font-heading text-gray-900">
+                {editingContent ? 'Edit Content' : 'Upload Content'}
+              </h2>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="p-6 space-y-5">
@@ -221,17 +297,23 @@ function Contents() {
                     value={formData.type}
                     onChange={(e) => setFormData({...formData, type: e.target.value})}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-body"
+                    disabled={editingContent} // Can't change type when editing
                   >
                     <option value="image">Image</option>
                     <option value="video">Video</option>
                     <option value="webpage">Webpage</option>
                     <option value="html">HTML</option>
                   </select>
+                  {editingContent && (
+                    <p className="text-xs text-gray-500 mt-1">Content type cannot be changed when editing</p>
+                  )}
                 </div>
 
                 {(formData.type === 'image' || formData.type === 'video') && (
                   <div>
-                    <label className="block text-sm font-body font-semibold text-gray-700 mb-2">Upload File</label>
+                    <label className="block text-sm font-body font-semibold text-gray-700 mb-2">
+                      {editingContent ? 'Replace File (optional)' : 'Upload File'}
+                    </label>
                     <div
                       onClick={() => document.getElementById('file-input').click()}
                       className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
@@ -248,7 +330,9 @@ function Contents() {
                           <svg className="w-12 h-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                           </svg>
-                          <p className="text-gray-600 font-body">Click to upload file</p>
+                          <p className="text-gray-600 font-body">
+                            {editingContent ? 'Click to upload new file (optional)' : 'Click to upload file'}
+                          </p>
                         </>
                       ) : (
                         <div className="space-y-4">
@@ -315,7 +399,7 @@ function Contents() {
               <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-3 justify-end rounded-b-2xl">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={handleCloseModal}
                   className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors font-body font-semibold"
                 >
                   Cancel
@@ -324,7 +408,7 @@ function Contents() {
                   type="submit"
                   className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-body font-semibold"
                 >
-                  Upload
+                  {editingContent ? 'Update' : 'Upload'}
                 </button>
               </div>
             </form>

@@ -36,12 +36,19 @@ React-based Content Management System for managing digital signage displays, con
 
 2. **Configure API Endpoint**
    
-   Update `src/services/api.js` if backend is not on `localhost:8000`:
-   ```javascript
-   const api = axios.create({
-     baseURL: 'http://your-backend-url/api',
-   });
-   ```
+   The frontend automatically detects the API URL:
+   
+   **Development (localhost):**
+   - Automatically uses `http://localhost:8000/api`
+   
+   **Production:**
+   - Create a `.env` file in the frontend root:
+     ```bash
+     REACT_APP_API_URL=https://api.yourdomain.com/api
+     ```
+   - Or it will auto-detect based on hostname
+   
+   See `.env.example` for configuration options.
 
 3. **Start Development Server**
    ```bash
