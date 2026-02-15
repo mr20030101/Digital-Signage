@@ -6,11 +6,14 @@ function Schedules() {
   const [schedules, setSchedules] = useState([]);
   const [displays, setDisplays] = useState([]);
   const [playlists, setPlaylists] = useState([]);
+  const [layouts, setLayouts] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState(null);
   const [formData, setFormData] = useState({
     display_id: '',
+    content_type: 'playlist', // 'playlist' or 'layout'
     playlist_id: '',
+    layout_id: '',
     start_time: '',
     end_time: '',
     is_active: true,
@@ -20,6 +23,7 @@ function Schedules() {
     fetchSchedules();
     fetchDisplays();
     fetchPlaylists();
+    fetchLayouts();
   }, []);
 
   const fetchSchedules = async () => {
@@ -46,6 +50,20 @@ function Schedules() {
       setPlaylists(response.data);
     } catch (error) {
       console.error('Error fetching playlists:', error);
+    }
+  };
+
+  const fetchLayouts = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/layouts', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      const data = await response.json();
+      setLayouts(data);
+    } catch (error) {
+      console.error('Error fetching layouts:', error);
     }
   };
 
@@ -93,14 +111,23 @@ function Schedules() {
 
   const handleEdit = (schedule) => {
     setEditingSchedule(schedule);
-    // Format datetime for input fields
+    // Format datetime for input fields in UTC+8 timezone
     const formatDateTime = (dateStr) => {
+      // Parse the date string from backend (should be in UTC+8 now)
       const date = new Date(dateStr);
-      return date.toISOString().slice(0, 16);
+      // Format for datetime-local input (YYYY-MM-DDTHH:mm)
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
     };
     setFormData({
       display_id: schedule.display_id,
-      playlist_id: schedule.playlist_id,
+      content_type: schedule.playlist_id ? 'playlist' : 'layout',
+      playlist_id: schedule.playlist_id || '',
+      layout_id: schedule.layout_id || '',
       start_time: formatDateTime(schedule.start_time),
       end_time: formatDateTime(schedule.end_time),
       is_active: schedule.is_active,
@@ -113,7 +140,9 @@ function Schedules() {
     setEditingSchedule(null);
     setFormData({
       display_id: '',
+      content_type: 'playlist',
       playlist_id: '',
+      layout_id: '',
       start_time: '',
       end_time: '',
       is_active: true,
@@ -164,6 +193,20 @@ function Schedules() {
     return playlist ? playlist.name : `Playlist #${id}`;
   };
 
+  const getLayoutName = (id) => {
+    const layout = layouts.find(l => l.id === id);
+    return layout ? layout.name : `Layout #${id}`;
+  };
+
+  const getContentName = (schedule) => {
+    if (schedule.playlist_id) {
+      return getPlaylistName(schedule.playlist_id);
+    } else if (schedule.layout_id) {
+      return getLayoutName(schedule.layout_id);
+    }
+    return 'N/A';
+  };
+
   return (
     <div>
       <div className="flex justify-between items-start mb-8">
@@ -198,7 +241,8 @@ function Schedules() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-body font-bold text-gray-600 uppercase tracking-wider">Display</th>
-                <th className="px-6 py-4 text-left text-xs font-body font-bold text-gray-600 uppercase tracking-wider">Playlist</th>
+                <th className="px-6 py-4 text-left text-xs font-body font-bold text-gray-600 uppercase tracking-wider">Content Type</th>
+                <th className="px-6 py-4 text-left text-xs font-body font-bold text-gray-600 uppercase tracking-wider">Content</th>
                 <th className="px-6 py-4 text-left text-xs font-body font-bold text-gray-600 uppercase tracking-wider">Start Time</th>
                 <th className="px-6 py-4 text-left text-xs font-body font-bold text-gray-600 uppercase tracking-wider">End Time</th>
                 <th className="px-6 py-4 text-left text-xs font-body font-bold text-gray-600 uppercase tracking-wider">Status</th>
@@ -209,7 +253,14 @@ function Schedules() {
               {schedules.map(schedule => (
                 <tr key={schedule.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 font-body font-semibold text-gray-900">{getDisplayName(schedule.display_id)}</td>
-                  <td className="px-6 py-4 font-body text-gray-600">{getPlaylistName(schedule.playlist_id)}</td>
+                  <td className="px-6 py-4 font-body text-gray-600">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-body font-semibold ${
+                      schedule.playlist_id ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {schedule.playlist_id ? 'Playlist' : 'Layout'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 font-body text-gray-600">{getContentName(schedule)}</td>
                   <td className="px-6 py-4 font-body text-sm text-gray-600">{new Date(schedule.start_time).toLocaleString()}</td>
                   <td className="px-6 py-4 font-body text-sm text-gray-600">{new Date(schedule.end_time).toLocaleString()}</td>
                   <td className="px-6 py-4">
@@ -272,21 +323,53 @@ function Schedules() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-body font-semibold text-gray-700 mb-2">Playlist</label>
+                  <label className="block text-sm font-body font-semibold text-gray-700 mb-2">Content Type</label>
                   <select
-                    value={formData.playlist_id}
-                    onChange={(e) => setFormData({...formData, playlist_id: e.target.value})}
+                    value={formData.content_type}
+                    onChange={(e) => setFormData({...formData, content_type: e.target.value, playlist_id: '', layout_id: ''})}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-body"
                     required
                   >
-                    <option value="">Select a playlist</option>
-                    {playlists.map(playlist => (
-                      <option key={playlist.id} value={playlist.id}>
-                        {playlist.name}
-                      </option>
-                    ))}
+                    <option value="playlist">Playlist</option>
+                    <option value="layout">Layout</option>
                   </select>
                 </div>
+
+                {formData.content_type === 'playlist' ? (
+                  <div>
+                    <label className="block text-sm font-body font-semibold text-gray-700 mb-2">Playlist</label>
+                    <select
+                      value={formData.playlist_id}
+                      onChange={(e) => setFormData({...formData, playlist_id: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-body"
+                      required
+                    >
+                      <option value="">Select a playlist</option>
+                      {playlists.map(playlist => (
+                        <option key={playlist.id} value={playlist.id}>
+                          {playlist.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-body font-semibold text-gray-700 mb-2">Layout</label>
+                    <select
+                      value={formData.layout_id}
+                      onChange={(e) => setFormData({...formData, layout_id: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-body"
+                      required
+                    >
+                      <option value="">Select a layout</option>
+                      {layouts.map(layout => (
+                        <option key={layout.id} value={layout.id}>
+                          {layout.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-body font-semibold text-gray-700 mb-2">Start Time</label>
