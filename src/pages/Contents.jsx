@@ -6,6 +6,7 @@ function Contents() {
   const [contents, setContents] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingContent, setEditingContent] = useState(null);
+  const [viewMode, setViewMode] = useState('boxed'); // 'boxed' or 'table'
   const [formData, setFormData] = useState({
     name: '',
     type: 'image',
@@ -202,18 +203,53 @@ function Contents() {
           <h1 className="text-4xl font-heading text-gray-900 mb-2">Content Library</h1>
           <p className="text-gray-600 font-body">Manage your media files and content</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg font-body font-semibold"
-        >
-          <img src="https://cdn-icons-png.flaticon.com/512/3097/3097412.png" alt="Upload" className="w-5 h-5 brightness-0 invert" />
-          Upload Content
-        </button>
+        <div className="flex items-center gap-3">
+          {/* View Toggle */}
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('boxed')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors font-body font-semibold ${
+                viewMode === 'boxed'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+              Boxed
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors font-body font-semibold ${
+                viewMode === 'table'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              Table
+            </button>
+          </div>
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg font-body font-semibold"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            Upload Content
+          </button>
+        </div>
       </div>
 
       {contents.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-16 text-center">
-          <img src="https://cdn-icons-png.flaticon.com/512/2344/2344895.png" alt="Empty" className="w-24 h-24 mx-auto mb-6 opacity-30" />
+          <svg className="w-24 h-24 mx-auto mb-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
           <h3 className="text-2xl font-heading text-gray-900 mb-2">No content yet</h3>
           <p className="text-gray-600 font-body mb-6">Upload your first image, video, or webpage to get started</p>
           <button
@@ -223,7 +259,77 @@ function Contents() {
             Upload Content
           </button>
         </div>
+      ) : viewMode === 'table' ? (
+        /* Table View */
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-4 text-left text-xs font-heading font-semibold text-gray-700 uppercase tracking-wider">Preview</th>
+                <th className="px-6 py-4 text-left text-xs font-heading font-semibold text-gray-700 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-4 text-left text-xs font-heading font-semibold text-gray-700 uppercase tracking-wider">Type</th>
+                <th className="px-6 py-4 text-left text-xs font-heading font-semibold text-gray-700 uppercase tracking-wider">Duration</th>
+                <th className="px-6 py-4 text-right text-xs font-heading font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {contents.map(content => (
+                <tr key={content.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center overflow-hidden">
+                      {content.thumbnail_path ? (
+                        <img 
+                          src={`http://localhost:8000/storage/${content.thumbnail_path}`} 
+                          alt={content.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : content.file_path && content.type === 'image' ? (
+                        <img 
+                          src={`http://localhost:8000/storage/${content.file_path}`} 
+                          alt={content.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="text-white scale-50">
+                          {getContentIcon(content.type)}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-body font-semibold text-gray-900">{content.name}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-xs font-body font-semibold rounded-full uppercase">
+                      {content.type}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-body text-gray-600">{content.duration}s</div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        onClick={() => handleEdit(content)}
+                        className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors font-body font-semibold text-sm"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(content.id)}
+                        className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-body font-semibold text-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
+        /* Boxed View */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {contents.map(content => (
             <div key={content.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
